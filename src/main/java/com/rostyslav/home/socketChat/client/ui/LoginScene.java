@@ -25,66 +25,123 @@ public class LoginScene {
     private Scene loginScene;
     private Socket clientSocket;
     private PrintWriter out;
+    private Stage mainStage;
+    private Color textColor;
+    private Color backgroundColor;
+    private GridPane grid;
+    private TextField userNameData;
+    private TextField passwordData;
 
-    public LoginScene(Color textColor, Color backGroundColor, Stage mainStage) {
-        mainStage.setTitle("Login");
-        BorderPane containerPane = new BorderPane();
+    public LoginScene(Color textColor, Color backgroundColor, Stage mainStage) {
+        this.textColor = textColor;
+        this.backgroundColor = backgroundColor;
+        this.mainStage = mainStage;
+        loginScene = collectLoginScene();
+    }
+
+    public Scene getLoginScene() {
+        return loginScene;
+    }
+
+
+    private GridPane initGridPane() {
         GridPane grid = new GridPane();
         grid.setHgap(10);
         grid.setVgap(10);
         grid.setPadding(new Insets(0, 0, 0, 0));
-        //main title
+        grid.setAlignment(Pos.CENTER);
+        return grid;
+    }
+
+    private void initWelcomeTitle(GridPane gridPane) {
         Text title = new Text("Welcome");
         title.setFont(Font.font("Tahoma", FontWeight.NORMAL, 20));
         title.setFill(textColor);
-        grid.add(title, 0, 0, 2, 1);
-        //username row username label+textfield
+        gridPane.add(title, 0, 0, 2, 1);
+    }
+
+    private TextField initUserNameTField(GridPane gridPane) {
         Label userName = new Label("User Name:");
         userName.setFont(Font.font(16));
         userName.setTextFill(textColor);
-        grid.add(userName, 0, 1);
+        gridPane.add(userName, 0, 1);
         TextField userTextField = new TextField();
-        grid.add(userTextField, 1, 1);
-        //password row pass label+passwordField
+        gridPane.add(userTextField, 1, 1);
+        return userTextField;
+    }
+
+    private TextField initPasswordTField(GridPane gridPane) {
         Label pw = new Label("Password:");
         pw.setTextFill(textColor);
         pw.setFont(Font.font(16));
-        grid.add(pw, 0, 2);
+        gridPane.add(pw, 0, 2);
         PasswordField pwBox = new PasswordField();
-        grid.add(pwBox, 1, 2);
-        //buttons row horizontalBoxGrid
+        gridPane.add(pwBox, 1, 2);
+        return pwBox;
+    }
+
+    private Button initBackToMainStageButton(GridPane gridPane) {
         Button backToMainStage = new Button("Back");
         backToMainStage.addEventFilter(MouseEvent.MOUSE_CLICKED, event ->
-                mainStage.setScene(new WelcomeScene(textColor, backGroundColor, mainStage).getWelcomeScene()));
+                mainStage.setScene(new WelcomeScene(textColor, backgroundColor, mainStage).getWelcomeScene()));
+        return backToMainStage;
+    }
+
+    private Button initSignInButton(GridPane gridPane) {
+
         Button signBtn = new Button("Sign in");
         signBtn.addEventFilter(MouseEvent.MOUSE_CLICKED, event -> {
-            String username = userTextField.getText();
-            if(username!=null&!username.isEmpty()){
-            try {
-                clientSocket = new Socket("0.0.0.0", 9999);
-                out = new PrintWriter(clientSocket.getOutputStream());
-                out.println(username);
-                out.flush();
-            } catch (IOException e) {
-                e.printStackTrace();
+            String username = userNameData.getText();
+            String password = passwordData.getText();
+
+            if (username != null & !username.isEmpty()) {
+                try {
+                    String credentials = "credentials:" + username + ", " + password;
+                    clientSocket = new Socket("0.0.0.0", 9999);
+                    out = new PrintWriter(clientSocket.getOutputStream());
+                    out.println(credentials);
+                    out.flush();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                mainStage.setScene(new MainChatScene(textColor, backgroundColor, mainStage, clientSocket, username).getMainChatScene());
             }
-            mainStage.setScene(new MainChatScene(textColor, backGroundColor, mainStage,clientSocket,username).getMainChatScene());
-        }});
-        //forming hBoxGrid
+        });
+        return signBtn;
+    }
+
+    private void colletButtons(Button backToMainStage, Button signBtn, GridPane gridPane) {
         HBox hbBtn = new HBox(10);
         hbBtn.setAlignment(Pos.BOTTOM_RIGHT);
         ObservableList<Node> children = hbBtn.getChildren();
         children.add(backToMainStage);
         children.add(signBtn);
-        grid.add(hbBtn, 1, 4);
-        //forming group and scene
-        grid.setAlignment(Pos.CENTER);
-        containerPane.setCenter(grid);
-        containerPane.setBackground(new Background(new BackgroundFill(backGroundColor, CornerRadii.EMPTY, Insets.EMPTY)));
-        loginScene = new Scene(containerPane, 500, 300);
+        gridPane.add(hbBtn, 1, 4);
     }
 
-    public Scene getLoginScene() {
-        return loginScene;
+    private BorderPane initBorderPane(GridPane gridPane) {
+        BorderPane containerPane = new BorderPane();
+        containerPane.setCenter(gridPane);
+        containerPane.setBackground(new Background(new BackgroundFill(backgroundColor, CornerRadii.EMPTY, Insets.EMPTY)));
+        return containerPane;
+    }
+
+    private Scene collectLoginScene() {
+        mainStage.setTitle("Login");
+        grid = initGridPane();
+        //main title
+        initWelcomeTitle(grid);
+        //username row username label+textfield
+        userNameData = initUserNameTField(grid);
+        //password row pass label+passwordField
+        passwordData = initPasswordTField(grid);
+        //buttons row horizontalBoxGrid
+        Button backToMainStage = initBackToMainStageButton(grid);
+        Button signBtn = initSignInButton(grid);
+        //forming hBoxGrid
+        colletButtons(backToMainStage, signBtn, grid);
+        //forming group and scene
+        BorderPane borderPane = initBorderPane(grid);
+        return new Scene(borderPane, 500, 300);
     }
 }
