@@ -10,7 +10,8 @@ import java.util.Map;
 public class SocketChatApp {
 
     private ServerSocket serverSocket;
-
+    private final File clients = new File("clients.txt");
+    private final BufferedReader fileReader = new BufferedReader(new FileReader(clients));
     private static Map<String, ServerMessageSenderThread> connectedClients = new HashMap<>();
 
     public static Map<String, ServerMessageSenderThread> getConnectedClients() {
@@ -19,6 +20,7 @@ public class SocketChatApp {
 
     public SocketChatApp() throws IOException {
         serverSocket = new ServerSocket(9999);
+        new Thread(registrationThread).start();
     }
 
 
@@ -27,18 +29,27 @@ public class SocketChatApp {
             while (true) {
                 Socket clientSocket = serverSocket.accept();
                 BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-                String userName = in.readLine();
-                System.out.println("accepted new client " + userName);
-                ServerMessageSenderThread clientThread = new ServerMessageSenderThread(clientSocket);
-                clientThread.start();
-                connectedClients.put(userName, clientThread);
-                String onlineList = String.join(",", connectedClients.keySet());
-                connectedClients.forEach((s, serverMessageSenderThread) -> serverMessageSenderThread.send("online:" + onlineList));
+                String credentials = in.readLine();
+                if (credentials.startsWith("credentials:")) {
+                    String nameAndPassword = credentials.replace("credentials:", "");
+                    String[] credArr = nameAndPassword.split(",");
+                    String client = fileReader.lines()
+                            .filter(s -> s.startsWith(credArr[0]) && s.contains(credArr[1]))
+                            .findAny().orElse("Not found.");
+
+                    System.out.println("accepted new client " + credArr[0]);
+                    ServerMessageSenderThread clientThread = new ServerMessageSenderThread(clientSocket);
+                    clientThread.start();
+                    connectedClients.put(credArr[0], clientThread);
+                    String onlineList = String.join(",", connectedClients.keySet());
+                    connectedClients.forEach((s, serverMessageSenderThread) -> serverMessageSenderThread.send("online:" + onlineList));
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
+
 
     public class ServerMessageSenderThread extends Thread {
         private Socket clientSocket;
@@ -77,7 +88,7 @@ public class SocketChatApp {
         }
     }
 
-    Runnable registrationThread = () -> {
+    private Runnable registrationThread = () -> {
 
         try {
             ServerSocket registrationSocket = new ServerSocket(9998);
@@ -85,17 +96,18 @@ public class SocketChatApp {
             DataOutputStream out;
             File clients = new File("clients.txt");
             FileWriter fileWriter = new FileWriter(clients);
-
             BufferedReader fileReader = new BufferedReader(new FileReader(clients));
             while (true) {
                 Socket clientRegistrationSocket = registrationSocket.accept();
                 in = new DataInputStream(clientRegistrationSocket.getInputStream());
                 out = new DataOutputStream(clientRegistrationSocket.getOutputStream());
-                String client = in.readUTF();
-                String[] clientData = client.split(",");
+                String registrationData = in.readUTF();
+                if(registrationData.startsWith("registration:")){
+
+                String[] clientData = registrationData.split(",");
                 if (fileReader.lines().noneMatch(s -> s.equals(clientData[0]))) {
                     try {
-                        fileWriter.append(client);
+                        fileWriter.append(registrationData);
                         fileWriter.flush();
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -105,6 +117,7 @@ public class SocketChatApp {
                 } else {
                     out.writeBoolean(false);
                     out.flush();
+                }
                 }
             }
         } catch (IOException e) {
