@@ -33,16 +33,16 @@ public class SocketChatApp {
                 if (credentials.startsWith("credentials:")) {
                     String nameAndPassword = credentials.replace("credentials:", "");
                     String[] credArr = nameAndPassword.split(",");
-                    String client = fileReader.lines()
-                            .filter(s -> s.startsWith(credArr[0]) && s.contains(credArr[1]))
-                            .findAny().orElse("Not found.");
-
-                    System.out.println("accepted new client " + credArr[0]);
-                    ServerMessageSenderThread clientThread = new ServerMessageSenderThread(clientSocket);
-                    clientThread.start();
-                    connectedClients.put(credArr[0], clientThread);
-                    String onlineList = String.join(",", connectedClients.keySet());
-                    connectedClients.forEach((s, serverMessageSenderThread) -> serverMessageSenderThread.send("online:" + onlineList));
+                    boolean accessGaranted = fileReader.lines()
+                            .anyMatch(s -> s.contains(credArr[0]) && s.contains(credArr[1]));
+                    if (accessGaranted) {
+                        System.out.println("accepted new client " + credArr[0]);
+                        ServerMessageSenderThread clientThread = new ServerMessageSenderThread(clientSocket);
+                        clientThread.start();
+                        connectedClients.put(credArr[0], clientThread);
+                        String onlineList = String.join(",", connectedClients.keySet());
+                        connectedClients.forEach((s, serverMessageSenderThread) -> serverMessageSenderThread.send("online:" + onlineList));
+                    }
                 }
             }
         } catch (IOException e) {
@@ -102,22 +102,22 @@ public class SocketChatApp {
                 in = new DataInputStream(clientRegistrationSocket.getInputStream());
                 out = new DataOutputStream(clientRegistrationSocket.getOutputStream());
                 String registrationData = in.readUTF();
-                if(registrationData.startsWith("registration:")){
-
-                String[] clientData = registrationData.split(",");
-                if (fileReader.lines().noneMatch(s -> s.equals(clientData[0]))) {
-                    try {
-                        fileWriter.append(registrationData);
-                        fileWriter.flush();
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                if (registrationData.startsWith("registration:")) {
+                   String clientData=registrationData.replace("registration:","");
+                    String[] parsedClientData = clientData.split(",");
+                    if (fileReader.lines().noneMatch(s -> s.equals(parsedClientData[1]))) {
+                        try {
+                            fileWriter.append(clientData);
+                            fileWriter.flush();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        out.writeBoolean(true);
+                        out.flush();
+                    } else {
+                        out.writeBoolean(false);
+                        out.flush();
                     }
-                    out.writeBoolean(true);
-                    out.flush();
-                } else {
-                    out.writeBoolean(false);
-                    out.flush();
-                }
                 }
             }
         } catch (IOException e) {
