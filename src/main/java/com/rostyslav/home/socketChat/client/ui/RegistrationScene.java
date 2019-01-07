@@ -13,6 +13,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
@@ -21,6 +22,7 @@ import java.net.Socket;
 public class RegistrationScene {
     private Scene registerScene;
     private PrintWriter out;
+    private DataInputStream in;
     private Socket clientSocket;
     private Color textColor;
     private Color backGroundColor;
@@ -144,11 +146,16 @@ public class RegistrationScene {
             if (sname != null && !sname.isEmpty() & semail != null && !semail.isEmpty() & spass != null && !spass.isEmpty()) {
                 try {
                     clientSocket = new Socket("0.0.0.0", 9998);
+                    in = new DataInputStream(clientSocket.getInputStream());
                     out = new PrintWriter(clientSocket.getOutputStream());
                     out.println(clientData);
                     out.flush();
+                    if(in.readBoolean()){
                     out.close();
-                    clientSocket.close();
+                    clientSocket.close();}
+                    else{
+                        //Alert window
+                    }
                 } catch (IOException e1) {
                     e1.printStackTrace();
                 }
