@@ -23,9 +23,4 @@ public class MainStage extends Application {
         mainStage.show();
     }
 
-    public static void main(String[] args) {
-        launch();
-    }
-
-
 }
