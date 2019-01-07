@@ -13,52 +13,102 @@ import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
-public class WelcomeScene {
+class WelcomeScene {
     private Scene welcomeScene;
+    private Color textColor;
+    private Color backgroundColor;
+    private Stage mainStage;
 
-    public WelcomeScene(Color textColor, Color backGroundColor, Stage mainStage) {
+    WelcomeScene(Color textColor, Color backgroundColor, Stage mainStage) {
+        this.textColor = textColor;
+        this.backgroundColor = backgroundColor;
+        this.mainStage = mainStage;
+        this.welcomeScene = collectScene();
+    }
+
+    Scene getWelcomeScene() {
+        return welcomeScene;
+    }
+
+    private Scene collectScene() {
+        setWelcomeSceneTitle();
+        BorderPane borderPane = generateBorderPane();
+        GridPane grid = generateGrid();
+        Text title = generateTitle();
+        Button register = generateRegistrationButton();
+        Button login = generateLoginButton();
+        VBox buttonsVbox = collectButtons(login, register);
+        collectGrid(grid, title, buttonsVbox);
+        setGridCenterPosition(borderPane, grid);
+        welcomeScene = new Scene(borderPane, 500, 300);
+        return welcomeScene;
+    }
+
+    private void setWelcomeSceneTitle() {
         mainStage.setTitle("Chat client app");
-        BorderPane containerPane=new BorderPane();
-        containerPane.setBackground(new Background(new BackgroundFill(backGroundColor, CornerRadii.EMPTY, Insets.EMPTY)));
-        GridPane grid=new GridPane();
+    }
+
+    private BorderPane generateBorderPane() {
+        BorderPane containerPane = new BorderPane();
+        containerPane.setBackground(new Background(new BackgroundFill(this.backgroundColor, CornerRadii.EMPTY, Insets.EMPTY)));
+        return containerPane;
+    }
+
+    private GridPane generateGrid() {
+        GridPane grid = new GridPane();
         grid.setAlignment(Pos.CENTER);
         grid.setHgap(10);
         grid.setVgap(10);
-        //title
+        return grid;
+    }
+
+    private Text generateTitle() {
         Text sceneTitle = new Text("Welcome, register or login!");
         sceneTitle.setFont(Font.font(30));
         sceneTitle.setX((500 - sceneTitle.getLayoutBounds().getWidth()) / 2);
         sceneTitle.setY(100);
         sceneTitle.setFill(textColor);
-        grid.add(sceneTitle,0,0,2,1);
-        //buttons
-        VBox buttonsVbox = new VBox();
-        buttonsVbox.setSpacing(15);
-        buttonsVbox.setAlignment(Pos.CENTER);
-       ObservableList<Node> children= buttonsVbox.getChildren();
+        return sceneTitle;
+    }
+
+    private Button generateRegistrationButton() {
         Button registerButton = new Button();
         registerButton.setPrefWidth(150);
         registerButton.setText("Register");
-        registerButton.setLayoutX((500 - 150) / 2);
+        registerButton.setLayoutX((500 - 150) / 2.0);
         registerButton.setLayoutY(130);
         registerButton.addEventFilter(MouseEvent.MOUSE_CLICKED, event ->
-                mainStage.setScene(new RegistrationScene(textColor, backGroundColor, mainStage).getRegisterScene()));
-        children.add(registerButton);
+                this.mainStage.setScene(new RegistrationScene(textColor, backgroundColor, mainStage).getRegisterScene()));
+        return registerButton;
+    }
+
+    private Button generateLoginButton() {
         Button loginButton = new Button();
-        loginButton.setLayoutX((500 - 150) / 2);
+        loginButton.setLayoutX((500 - 150) / 2.0);
         loginButton.setLayoutY(180);
         loginButton.setPrefWidth(150);
         loginButton.setText("Login");
         loginButton.addEventFilter(MouseEvent.MOUSE_CLICKED, event ->
-                mainStage.setScene(new LoginScene(textColor, backGroundColor, mainStage).getLoginScene()));
-        children.add(loginButton);
-        grid.add(buttonsVbox,0, 1, 2, 1);
-        //forming and scene
-       containerPane.setCenter(grid);
-        welcomeScene = new Scene(containerPane, 500, 300);
+                this.mainStage.setScene(new LoginScene(textColor, backgroundColor, mainStage).getLoginScene()));
+        return loginButton;
     }
 
-    public Scene getWelcomeScene() {
-        return welcomeScene;
+    private VBox collectButtons(Button login, Button register) {
+        VBox buttonsVbox = new VBox();
+        buttonsVbox.setSpacing(15);
+        buttonsVbox.setAlignment(Pos.CENTER);
+        ObservableList<Node> children = buttonsVbox.getChildren();
+        children.add(register);
+        children.add(login);
+        return buttonsVbox;
+    }
+
+    private void collectGrid(GridPane gridPane, Text title, VBox buttonsVbox) {
+        gridPane.add(title, 0, 0, 2, 1);
+        gridPane.add(buttonsVbox, 0, 1, 2, 1);
+    }
+
+    private void setGridCenterPosition(BorderPane borderPane, GridPane grid) {
+        borderPane.setCenter(grid);
     }
 }
