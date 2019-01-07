@@ -22,46 +22,83 @@ public class RegistrationScene {
     private Scene registerScene;
     private PrintWriter out;
     private Socket clientSocket;
+    private Color textColor;
+    private Color backGroundColor;
+    private Stage mainStage;
+    private TextField nameData;
+    private TextField emailData;
+    private TextField passwordData;
+    private ToggleGroup genderData;
 
     public RegistrationScene(Color textColor, Color backGroundColor, Stage mainStage) {
+        this.textColor = textColor;
+        this.backGroundColor = backGroundColor;
+        this.mainStage = mainStage;
+        collectScene();
+    }
+
+    public Scene getRegisterScene() {
+        return registerScene;
+    }
+
+    private void setStageTitle() {
         mainStage.setTitle("Registration");
+    }
+
+    private BorderPane initBorderPane() {
         BorderPane containerPane = new BorderPane();
         containerPane.setBackground(new Background(new BackgroundFill(backGroundColor, CornerRadii.EMPTY, Insets.EMPTY)));
+        return containerPane;
+    }
+
+    private GridPane initGridPane() {
         GridPane grid = new GridPane();
         grid.setHgap(20);
         grid.setVgap(20);
         grid.setAlignment(Pos.CENTER);
+        return grid;
+    }
 
+    private void initTitle(GridPane gridPane) {
         Text title = new Text("Fill all fields with properly data.");
         title.setFill(textColor);
         title.setFont(Font.font(20));
-        grid.add(title, 0, 0, 2, 1);
-        //name row
-        Label name = new Label("Name :");
-        name.setFont(Font.font(16));
-        name.setTextFill(textColor);
-        grid.add(name, 0, 1);
+        gridPane.add(title, 0, 0, 2, 1);
+    }
+
+    private Label initLabel(String labelInfo) {
+        Label label = new Label(labelInfo);
+        label.setFont(Font.font(16));
+        label.setTextFill(textColor);
+        return label;
+    }
+
+    private TextField initNameInputRow(GridPane gridPane) {
+        Label name = initLabel("Name :");
         TextField nameField = new TextField();
-        grid.add(nameField, 1, 1);
-        //email row
-        Label email = new Label("Email :");
-        email.setFont(Font.font(16));
-        email.setTextFill(textColor);
-        grid.add(email, 0, 2);
+        gridPane.add(name, 0, 1);
+        gridPane.add(nameField, 1, 1);
+        return nameField;
+    }
+
+    private TextField initEmailInputRow(GridPane gridPane) {
+        Label label = initLabel("Email :");
         TextField emailTextField = new TextField();
-        grid.add(emailTextField, 1, 2);
-        //pass row
-        Label pass = new Label("Password :");
-        pass.setFont(Font.font(16));
-        pass.setTextFill(textColor);
-        grid.add(pass, 0, 3);
+        gridPane.add(label, 0, 2);
+        gridPane.add(emailTextField, 1, 2);
+        return emailTextField;
+    }
+
+    private TextField initPasswordInputRow(GridPane gridPane) {
+        Label label = initLabel("Password :");
         TextField passTextField = new TextField();
-        grid.add(passTextField, 1, 3);
-        //gender row
-        Label gender = new Label("Gender :");
-        gender.setFont(Font.font(16));
-        gender.setTextFill(textColor);
-        grid.add(gender, 0, 4);
+        gridPane.add(label, 0, 3);
+        gridPane.add(passTextField, 1, 3);
+        return passTextField;
+    }
+
+    private ToggleGroup initGenderInputRow(GridPane gridPane) {
+        Label label = initLabel("Gender :");
         ToggleGroup radioButtonsGroup = new ToggleGroup();
         radioButtonsGroup.selectedToggleProperty().addListener((observable, oldValue, newValue) -> {
             if (radioButtonsGroup.getSelectedToggle() != null) {
@@ -82,19 +119,26 @@ public class RegistrationScene {
         female.setTextFill(textColor);
         female.setUserData("Female");
         children.add(female);
-        grid.add(hbrbuttons, 1, 4);
-        //buttons row
+        gridPane.add(label, 0, 4);
+        gridPane.add(hbrbuttons, 1, 4);
+        return radioButtonsGroup;
+    }
+
+    private Button initBackToMainMenuButton() {
         Button backToMainStage = new Button("Back");
         backToMainStage.addEventFilter(MouseEvent.MOUSE_CLICKED, event -> {
             mainStage.setScene(new WelcomeScene(textColor, backGroundColor, mainStage).getWelcomeScene());
         });
+        return backToMainStage;
+    }
+
+    private Button initSubmitButton() {
         Button submit = new Button("Register");
         submit.addEventFilter(MouseEvent.MOUSE_CLICKED, e -> {
-            //REGISTRATION REST CALL
-            String sname = nameField.getText();
-            String semail = emailTextField.getText();
-            String spass = passTextField.getText();
-            String sgender = radioButtonsGroup.getSelectedToggle().getUserData().toString();
+            String sname = nameData.getText();
+            String semail = emailData.getText();
+            String spass = passwordData.getText();
+            String sgender = genderData.getSelectedToggle().getUserData().toString();
             String clientData = sname + "," + semail + "," + "," + spass + "," + sgender;
             System.out.println(clientData);
             if (sname != null && !sname.isEmpty() & semail != null && !semail.isEmpty() & spass != null && !spass.isEmpty()) {
@@ -110,21 +154,42 @@ public class RegistrationScene {
                 }
             }
         });
+
+        return submit;
+    }
+
+    private HBox collectButtons(GridPane gridPane, Button back, Button submit) {
         HBox hBox = new HBox();
         hBox.setAlignment(Pos.BOTTOM_RIGHT);
         hBox.setSpacing(10);
         ObservableList<Node> childrenButtons = hBox.getChildren();
-        childrenButtons.add(backToMainStage);
+        childrenButtons.add(back);
         childrenButtons.add(submit);
-        grid.add(hBox, 1, 5);
-        containerPane.setCenter(grid);
-        registerScene = new Scene(containerPane, 500, 300);
+        gridPane.add(hBox, 1, 5);
+        return hBox;
+    }
+
+
+    private void collectScene() {
+        //collectScene
+        setStageTitle();
+        BorderPane borderPane = initBorderPane();
+        GridPane grid = initGridPane();
+        initTitle(grid);
+        //name row
+        nameData = initNameInputRow(grid);
+        //email row
+        emailData = initEmailInputRow(grid);
+        //pass row
+        passwordData = initPasswordInputRow(grid);
+        //gender row
+        genderData = initGenderInputRow(grid);
+        //buttons row
+        Button back = initBackToMainMenuButton();
+        Button submit = initSubmitButton();
+        collectButtons(grid, back, submit);
+        borderPane.setCenter(grid);
+        registerScene = new Scene(borderPane, 500, 300);
         registerScene.setFill(backGroundColor);
     }
-
-    public Scene getRegisterScene() {
-        return registerScene;
-    }
-
-
 }
