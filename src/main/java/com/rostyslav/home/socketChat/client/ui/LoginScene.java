@@ -29,7 +29,7 @@ public class LoginScene {
     private Color textColor;
     private Color backgroundColor;
     private GridPane grid;
-    private TextField userNameData;
+    private TextField emailData;
     private TextField passwordData;
 
     public LoginScene(Color textColor, Color backgroundColor, Stage mainStage) {
@@ -60,24 +60,24 @@ public class LoginScene {
         gridPane.add(title, 0, 0, 2, 1);
     }
 
-    private TextField initUserNameTField(GridPane gridPane) {
-        Label userName = new Label("User Name:");
-        userName.setFont(Font.font(16));
-        userName.setTextFill(textColor);
-        gridPane.add(userName, 0, 1);
-        TextField userTextField = new TextField();
-        gridPane.add(userTextField, 1, 1);
-        return userTextField;
+    private TextField initEmailTField(GridPane gridPane) {
+        Label email = new Label("Email:");
+        email.setFont(Font.font(16));
+        email.setTextFill(textColor);
+        gridPane.add(email, 0, 1);
+        TextField emailTextField = new TextField();
+        gridPane.add(emailTextField, 1, 1);
+        return emailTextField;
     }
 
     private TextField initPasswordTField(GridPane gridPane) {
-        Label pw = new Label("Password:");
-        pw.setTextFill(textColor);
-        pw.setFont(Font.font(16));
-        gridPane.add(pw, 0, 2);
-        PasswordField pwBox = new PasswordField();
-        gridPane.add(pwBox, 1, 2);
-        return pwBox;
+        Label password = new Label("Password:");
+        password.setTextFill(textColor);
+        password.setFont(Font.font(16));
+        gridPane.add(password, 0, 2);
+        PasswordField passwordField = new PasswordField();
+        gridPane.add(passwordField, 1, 2);
+        return passwordField;
     }
 
     private Button initBackToMainStageButton(GridPane gridPane) {
@@ -91,12 +91,12 @@ public class LoginScene {
 
         Button signBtn = new Button("Sign in");
         signBtn.addEventFilter(MouseEvent.MOUSE_CLICKED, event -> {
-            String username = userNameData.getText();
+            String email = emailData.getText();
             String password = passwordData.getText();
 
-            if (username != null & !username.isEmpty()) {
+            if (email != null & !email.isEmpty()) {
                 try {
-                    String credentials = "credentials:" + username + ", " + password;
+                    String credentials = "credentials:" + email + ", " + password;
                     clientSocket = new Socket("0.0.0.0", 9999);
                     out = new PrintWriter(clientSocket.getOutputStream());
                     out.println(credentials);
@@ -104,7 +104,7 @@ public class LoginScene {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                mainStage.setScene(new MainChatScene(textColor, backgroundColor, mainStage, clientSocket, username).getMainChatScene());
+                mainStage.setScene(new MainChatScene(textColor, backgroundColor, mainStage, clientSocket, email).getMainChatScene());
             }
         });
         return signBtn;
@@ -132,7 +132,7 @@ public class LoginScene {
         //main title
         initWelcomeTitle(grid);
         //username row username label+textfield
-        userNameData = initUserNameTField(grid);
+        emailData = initEmailTField(grid);
         //password row pass label+passwordField
         passwordData = initPasswordTField(grid);
         //buttons row horizontalBoxGrid
