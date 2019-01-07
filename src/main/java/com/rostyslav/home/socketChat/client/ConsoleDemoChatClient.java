@@ -4,14 +4,14 @@ import java.io.*;
 import java.net.Socket;
 import java.util.Scanner;
 
-public class ChatClient {
+public class ConsoleDemoChatClient {
     Socket socket;
     Scanner keyboardIn;
     String userName = null;
     BufferedReader in;
     PrintWriter out;
 
-    public ChatClient() throws IOException {
+    public ConsoleDemoChatClient() throws IOException {
         socket = new Socket("0.0.0.0", 9999);
         in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         out = new PrintWriter(socket.getOutputStream());
@@ -69,6 +69,6 @@ public class ChatClient {
 
 
     public static void main(String[] args) throws IOException {
-        new ChatClient();
+        new ConsoleDemoChatClient();
     }
 }

@@ -139,7 +139,7 @@ public class RegistrationScene {
             String semail = emailData.getText();
             String spass = passwordData.getText();
             String sgender = genderData.getSelectedToggle().getUserData().toString();
-            String clientData = sname + "," + semail + "," + "," + spass + "," + sgender;
+            String clientData = "registration:"+sname + "," + semail + "," + "," + spass + "," + sgender;
             System.out.println(clientData);
             if (sname != null && !sname.isEmpty() & semail != null && !semail.isEmpty() & spass != null && !spass.isEmpty()) {
                 try {
@@ -154,7 +154,6 @@ public class RegistrationScene {
                 }
             }
         });
-
         return submit;
     }
 
