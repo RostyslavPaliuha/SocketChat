@@ -15,6 +15,8 @@ import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
@@ -24,7 +26,8 @@ public class LoginScene {
 
     private Scene loginScene;
     private Socket clientSocket;
-    private PrintWriter out;
+    private DataOutputStream out;
+    private DataInputStream in;
     private Stage mainStage;
     private Color textColor;
     private Color backgroundColor;
@@ -32,10 +35,11 @@ public class LoginScene {
     private TextField emailData;
     private TextField passwordData;
 
-    public LoginScene(Color textColor, Color backgroundColor, Stage mainStage) {
+    public LoginScene(Color textColor, Color backgroundColor, Stage mainStage, Socket socket) {
         this.textColor = textColor;
         this.backgroundColor = backgroundColor;
         this.mainStage = mainStage;
+        this.clientSocket = socket;
         loginScene = collectLoginScene();
     }
 
@@ -83,7 +87,13 @@ public class LoginScene {
     private Button initBackToMainStageButton(GridPane gridPane) {
         Button backToMainStage = new Button("Back");
         backToMainStage.addEventFilter(MouseEvent.MOUSE_CLICKED, event ->
-                mainStage.setScene(new WelcomeScene(textColor, backgroundColor, mainStage).getWelcomeScene()));
+        {
+            try {
+                mainStage.setScene(new WelcomeScene(textColor, backgroundColor, mainStage).getWelcomeScene());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
         return backToMainStage;
     }
 
@@ -94,23 +104,32 @@ public class LoginScene {
             String email = emailData.getText();
             String password = passwordData.getText();
 
-            if (email != null & !email.isEmpty()) {
+            if (email != null && password != null) {
                 try {
-                    String credentials = "credentials:" + email + ", " + password;
-                    clientSocket = new Socket("0.0.0.0", 9999);
-                    out = new PrintWriter(clientSocket.getOutputStream());
-                    out.println(credentials);
+                    String credentials = "login:" + email + ", " + password;
+                    in = new DataInputStream(clientSocket.getInputStream());
+                    out = new DataOutputStream(clientSocket.getOutputStream());
+                    out.writeUTF(credentials);
                     out.flush();
+                    String userNickName = in.readUTF();
+                    if (!userNickName.isEmpty())
+                        mainStage.setScene(new MainChatScene(textColor, backgroundColor, mainStage, clientSocket, userNickName).getMainChatScene());
                 } catch (IOException e) {
                     e.printStackTrace();
+                } finally {
+                    try {
+                        in.close();
+                        out.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
-                mainStage.setScene(new MainChatScene(textColor, backgroundColor, mainStage, clientSocket, email).getMainChatScene());
             }
         });
         return signBtn;
     }
 
-    private void colletButtons(Button backToMainStage, Button signBtn, GridPane gridPane) {
+    private void collectButtons(Button backToMainStage, Button signBtn, GridPane gridPane) {
         HBox hbBtn = new HBox(10);
         hbBtn.setAlignment(Pos.BOTTOM_RIGHT);
         ObservableList<Node> children = hbBtn.getChildren();
@@ -139,7 +158,7 @@ public class LoginScene {
         Button backToMainStage = initBackToMainStageButton(grid);
         Button signBtn = initSignInButton(grid);
         //forming hBoxGrid
-        colletButtons(backToMainStage, signBtn, grid);
+        collectButtons(backToMainStage, signBtn, grid);
         //forming group and scene
         BorderPane borderPane = initBorderPane(grid);
         return new Scene(borderPane, 500, 300);

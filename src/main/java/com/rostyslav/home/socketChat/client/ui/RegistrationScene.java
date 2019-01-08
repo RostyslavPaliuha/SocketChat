@@ -14,6 +14,7 @@ import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
@@ -21,7 +22,7 @@ import java.net.Socket;
 
 public class RegistrationScene {
     private Scene registerScene;
-    private PrintWriter out;
+    private DataOutputStream out;
     private DataInputStream in;
     private Socket clientSocket;
     private Color textColor;
@@ -32,10 +33,11 @@ public class RegistrationScene {
     private TextField passwordData;
     private ToggleGroup genderData;
 
-    public RegistrationScene(Color textColor, Color backGroundColor, Stage mainStage) {
+    public RegistrationScene(Color textColor, Color backGroundColor, Stage mainStage,Socket socket) {
         this.textColor = textColor;
         this.backGroundColor = backGroundColor;
         this.mainStage = mainStage;
+        this.clientSocket=socket;
         collectScene();
     }
 
@@ -129,7 +131,11 @@ public class RegistrationScene {
     private Button initBackToMainMenuButton() {
         Button backToMainStage = new Button("Back");
         backToMainStage.addEventFilter(MouseEvent.MOUSE_CLICKED, event -> {
-            mainStage.setScene(new WelcomeScene(textColor, backGroundColor, mainStage).getWelcomeScene());
+            try {
+                mainStage.setScene(new WelcomeScene(textColor, backGroundColor, mainStage).getWelcomeScene());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         });
         return backToMainStage;
     }
@@ -141,19 +147,17 @@ public class RegistrationScene {
             String semail = emailData.getText();
             String spass = passwordData.getText();
             String sgender = genderData.getSelectedToggle().getUserData().toString();
-            String clientData = "registration:"+sname + "," + semail + "," + "," + spass + "," + sgender;
+            String clientData = "registration:" + sname + "," + semail + "," + spass + "," + sgender;
             System.out.println(clientData);
             if (sname != null && !sname.isEmpty() & semail != null && !semail.isEmpty() & spass != null && !spass.isEmpty()) {
                 try {
-                    clientSocket = new Socket("0.0.0.0", 9998);
                     in = new DataInputStream(clientSocket.getInputStream());
-                    out = new PrintWriter(clientSocket.getOutputStream());
-                    out.println(clientData);
+                    out = new DataOutputStream(clientSocket.getOutputStream());
+                    out.writeUTF(clientData);
                     out.flush();
-                    if(in.readBoolean()){
-                    out.close();
-                    clientSocket.close();}
-                    else{
+                    if (in.readBoolean()) {
+                        mainStage.setScene(new LoginScene(textColor,backGroundColor,mainStage,clientSocket).getLoginScene());
+                    } else {
                         //Alert window
                     }
                 } catch (IOException e1) {

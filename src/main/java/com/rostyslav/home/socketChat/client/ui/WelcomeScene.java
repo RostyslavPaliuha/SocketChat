@@ -13,17 +13,22 @@ import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
+import java.io.IOException;
+import java.net.Socket;
+
 class WelcomeScene {
     private Scene welcomeScene;
     private Color textColor;
     private Color backgroundColor;
     private Stage mainStage;
+    private Socket socket;
 
-    WelcomeScene(Color textColor, Color backgroundColor, Stage mainStage) {
+    WelcomeScene(Color textColor, Color backgroundColor, Stage mainStage) throws IOException {
         this.textColor = textColor;
         this.backgroundColor = backgroundColor;
         this.mainStage = mainStage;
         this.welcomeScene = collectScene();
+        this.socket=new Socket("0.0.0.0",9999);
     }
 
     Scene getWelcomeScene() {
@@ -78,7 +83,7 @@ class WelcomeScene {
         registerButton.setLayoutX((500 - 150) / 2.0);
         registerButton.setLayoutY(130);
         registerButton.addEventFilter(MouseEvent.MOUSE_CLICKED, event ->
-                this.mainStage.setScene(new RegistrationScene(textColor, backgroundColor, mainStage).getRegisterScene()));
+                this.mainStage.setScene(new RegistrationScene(textColor, backgroundColor, mainStage,socket).getRegisterScene()));
         return registerButton;
     }
 
@@ -89,7 +94,7 @@ class WelcomeScene {
         loginButton.setPrefWidth(150);
         loginButton.setText("Login");
         loginButton.addEventFilter(MouseEvent.MOUSE_CLICKED, event ->
-                this.mainStage.setScene(new LoginScene(textColor, backgroundColor, mainStage).getLoginScene()));
+                this.mainStage.setScene(new LoginScene(textColor, backgroundColor, mainStage,socket).getLoginScene()));
         return loginButton;
     }
 

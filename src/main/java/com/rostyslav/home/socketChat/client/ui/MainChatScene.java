@@ -2,10 +2,7 @@ package com.rostyslav.home.socketChat.client.ui;
 
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
@@ -13,10 +10,7 @@ import javafx.scene.text.Font;
 import javafx.stage.Stage;
 
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.Socket;
 import java.util.Arrays;
 
@@ -26,16 +20,18 @@ public class MainChatScene {
     private Color textColor;
     private Color backagroundColor;
     private Scene mainChatScene;
-    private BufferedReader in;
-    private PrintWriter out;
+    private DataInputStream in;
+    private DataOutputStream out;
     private String userNickName;
     private TextArea generalMessageWindow;
     private TextArea usersOnlineStatus;
+    private Socket clientSocket;
 
     public MainChatScene(Color textColor, Color backGroundColor, Stage mainStage, Socket clientSocket, String userNickName) {
         this.textColor = textColor;
         this.backagroundColor = backGroundColor;
         this.userNickName = userNickName;
+        this.clientSocket = clientSocket;
         collectChatScene();
     }
 
@@ -46,8 +42,8 @@ public class MainChatScene {
 
     private void initOutPutInput(Socket clientSocket) {
         try {
-            in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-            out = new PrintWriter(clientSocket.getOutputStream());
+            in = new DataInputStream(clientSocket.getInputStream());
+            out = new DataOutputStream(clientSocket.getOutputStream());
         } catch (IOException e) {
             //alert message
         }
@@ -66,7 +62,7 @@ public class MainChatScene {
         generalMessageWindow = initTextArea(350, 240);
         VBox generalChatVBox = new VBox();
         generalChatVBox.getChildren().addAll(label, generalMessageWindow);
-        gridPane.add(generalChatVBox, 0, 0);
+        gridPane.add(generalChatVBox, 0, 1);
         return generalChatVBox;
     }
 
@@ -75,7 +71,7 @@ public class MainChatScene {
         usersOnlineStatus = initTextArea(150, 240);
         VBox usersStatusVB = new VBox();
         usersStatusVB.getChildren().addAll(label, usersOnlineStatus);
-        gridPane.add(usersStatusVB, 1, 0);
+        gridPane.add(usersStatusVB, 1, 1);
         return usersStatusVB;
     }
 
@@ -103,8 +99,12 @@ public class MainChatScene {
             String msg = "message:";
             if (textField.getText().length() > 1) {
                 String message = msg.concat(userNickName).concat(" : ").concat(textField.getText());
-                out.println(message);
-                out.flush();
+                try {
+                    out.writeUTF(message);
+                    out.flush();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
                 textField.clear();
             }
         });
@@ -116,10 +116,11 @@ public class MainChatScene {
     }
 
     private void launchReader() {
+        initOutPutInput(clientSocket);
         Runnable reader = () -> {
             while (true) {
                 try {
-                    String inputString = in.readLine();
+                    String inputString = in.readUTF();
                     if (inputString.startsWith("message:")) {
                         String message = inputString.replace("message:", "");
                         generalMessageWindow.appendText(message + "\n");
@@ -139,9 +140,22 @@ public class MainChatScene {
 
     private void collectChatScene() {
         GridPane gridPane = initGridPane();
+        initMenuBar(gridPane);
         initGeneralChatWindow(gridPane);
         initOnlineUsers(gridPane);
         initInputConsole(gridPane);
         mainChatScene = new Scene(gridPane, 500, 300);
+    }
+
+    private void initMenuBar(GridPane gridPane) {
+        Menu menu1 = new Menu("File");
+        Menu menu2 = new Menu("Options");
+        Menu menu3 = new Menu("Help");
+
+        MenuItem exit = new MenuItem("Exit");
+        menu1.getItems().add(exit);
+        MenuBar menuBar = new MenuBar();
+        menuBar.getMenus().addAll(menu1, menu2, menu3);
+        gridPane.add(menuBar, 0, 0,2,1);
     }
 }
