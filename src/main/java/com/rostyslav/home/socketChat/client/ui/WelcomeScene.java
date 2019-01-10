@@ -1,11 +1,14 @@
 package com.rostyslav.home.socketChat.client.ui;
 
+import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
@@ -15,6 +18,8 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 
 class WelcomeScene {
     private Scene welcomeScene;
@@ -28,7 +33,19 @@ class WelcomeScene {
         this.backgroundColor = backgroundColor;
         this.mainStage = mainStage;
         this.welcomeScene = collectScene();
-        this.socket=new Socket("0.0.0.0",9999);
+        connect();
+    }
+
+    private void connect() {
+        try {
+            this.socket = new Socket("0.0.0.0", 9999);
+        } catch (SocketException se) {
+            allerDialog();
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     Scene getWelcomeScene() {
@@ -83,7 +100,7 @@ class WelcomeScene {
         registerButton.setLayoutX((500 - 150) / 2.0);
         registerButton.setLayoutY(130);
         registerButton.addEventFilter(MouseEvent.MOUSE_CLICKED, event ->
-                this.mainStage.setScene(new RegistrationScene(textColor, backgroundColor, mainStage,socket).getRegisterScene()));
+                this.mainStage.setScene(new RegistrationScene(textColor, backgroundColor, mainStage, socket).getRegisterScene()));
         return registerButton;
     }
 
@@ -94,7 +111,7 @@ class WelcomeScene {
         loginButton.setPrefWidth(150);
         loginButton.setText("Login");
         loginButton.addEventFilter(MouseEvent.MOUSE_CLICKED, event ->
-                this.mainStage.setScene(new LoginScene(textColor, backgroundColor, mainStage,socket).getLoginScene()));
+                this.mainStage.setScene(new LoginScene(textColor, backgroundColor, mainStage, socket).getLoginScene()));
         return loginButton;
     }
 
@@ -116,4 +133,22 @@ class WelcomeScene {
     private void setGridCenterPosition(BorderPane borderPane, GridPane grid) {
         borderPane.setCenter(grid);
     }
+
+    private void allerDialog() {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Connection Error");
+        alert.setHeaderText("Hey, something going wrong...");
+        alert.setContentText("Server not respond!");
+        alert.setOnCloseRequest(event -> {
+            Platform.exit();
+            System.exit(0);
+        });
+        alert.showAndWait().ifPresent(buttonType -> {
+            if (buttonType == ButtonType.OK) {
+                Platform.exit();
+                System.exit(0);
+            }
+        });
+    }
+
 }
