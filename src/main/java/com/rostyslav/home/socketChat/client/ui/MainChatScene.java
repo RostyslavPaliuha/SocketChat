@@ -118,9 +118,14 @@ public class MainChatScene {
     private void launchReader() {
         initOutPutInput(clientSocket);
         Runnable reader = () -> {
+        String inputString="";
             while (true) {
                 try {
-                    String inputString = in.readUTF();
+                    try {
+                         inputString= in.readUTF();
+                    } catch (EOFException e) {
+
+                    }
                     if (inputString.startsWith("message:")) {
                         String message = inputString.replace("message:", "");
                         generalMessageWindow.appendText(message + "\n");
