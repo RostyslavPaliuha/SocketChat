@@ -2,25 +2,33 @@ package com.rostyslav.home.socketChat.server;
 
 import java.io.*;
 import java.net.Socket;
-import java.util.concurrent.Executors;
 
-class MainThread implements Runnable {
 
-    private Socket clientSocket;
+class SessionStarterThread implements Runnable {
+
+    private Socket socket;
     private File clients;
     private volatile boolean chooseMaked = false;
+    private DataInputStream in;
+    private DataOutputStream out;
 
-    public MainThread(Socket clientSocket, File clients) {
-        this.clientSocket = clientSocket;
+    public SessionStarterThread(Socket socket, File clients) {
+        this.socket = socket;
         this.clients = clients;
+        try {
+            in = new DataInputStream(socket.getInputStream());
+            out = new DataOutputStream(socket.getOutputStream());
+            socket.setKeepAlive(true);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     public void run() {
+
         try (BufferedReader fileReader = new BufferedReader(new FileReader(clients));
-             BufferedWriter fileWriter = new BufferedWriter(new FileWriter(clients, true));
-             DataInputStream in = new DataInputStream(clientSocket.getInputStream());
-             DataOutputStream out = new DataOutputStream(clientSocket.getOutputStream())) {
+             BufferedWriter fileWriter = new BufferedWriter(new FileWriter(clients, true))) {
             while (!chooseMaked) {
                 String data = in.readUTF();
                 if (data.startsWith("login:")) {
@@ -29,13 +37,13 @@ class MainThread implements Runnable {
                     boolean accessGaranted = fileReader.lines()
                             .anyMatch(s -> s.contains(credArr[0]) && s.contains(credArr[1]));
                     if (accessGaranted) {
-                        out.writeUTF(credArr[0]);
                         System.out.println("accepted new client " + credArr[0]);
-                        ClientMessageSender clientThread = new ClientMessageSender(clientSocket);
-                        Executors.newSingleThreadExecutor().execute(clientThread);
-                        SocketChatServer.getConnectedClients().put(credArr[0], clientThread);
+                        ClientSessionThread clientSessionThread = new ClientSessionThread(socket);
+                        new Thread(clientSessionThread).start();
+                        SocketChatServer.getConnectedClients().put(credArr[0], clientSessionThread);
                         String onlineList = String.join(",", SocketChatServer.getConnectedClients().keySet());
                         SocketChatServer.getConnectedClients().forEach((s, serverMessageSenderThread) -> serverMessageSenderThread.send("online:" + onlineList));
+                        out.writeUTF(credArr[0]);
                         chooseMaked = true;
                     }
                 } else if (data.startsWith("registration:")) {

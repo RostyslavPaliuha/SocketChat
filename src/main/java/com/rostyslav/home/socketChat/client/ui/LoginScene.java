@@ -15,32 +15,35 @@ import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.Socket;
 
 
 public class LoginScene {
 
     private Scene loginScene;
-    private Socket clientSocket;
-    private DataOutputStream out;
-    private DataInputStream in;
+    private Socket socket;
     private Stage mainStage;
     private Color textColor;
     private Color backgroundColor;
     private GridPane grid;
     private TextField emailData;
     private TextField passwordData;
+    private InputStream inputStream;
+    private OutputStream outputStream;
 
     public LoginScene(Color textColor, Color backgroundColor, Stage mainStage, Socket socket) {
         this.textColor = textColor;
         this.backgroundColor = backgroundColor;
         this.mainStage = mainStage;
-        this.clientSocket = socket;
+        this.socket = socket;
         loginScene = collectLoginScene();
+        try {
+            inputStream = this.socket.getInputStream();
+            outputStream = this.socket.getOutputStream();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public Scene getLoginScene() {
@@ -84,12 +87,12 @@ public class LoginScene {
         return passwordField;
     }
 
-    private Button initBackToMainStageButton(GridPane gridPane) {
+    private Button initBackToMainStageButton() {
         Button backToMainStage = new Button("Back");
         backToMainStage.addEventFilter(MouseEvent.MOUSE_CLICKED, event ->
         {
             try {
-                mainStage.setScene(new WelcomeScene(textColor, backgroundColor, mainStage).getWelcomeScene());
+                mainStage.setScene(new WelcomeScene(textColor, backgroundColor, mainStage, socket).getWelcomeScene());
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -97,7 +100,7 @@ public class LoginScene {
         return backToMainStage;
     }
 
-    private Button initSignInButton(GridPane gridPane) {
+    private Button initSignInButton() {
 
         Button signBtn = new Button("Sign in");
         signBtn.addEventFilter(MouseEvent.MOUSE_CLICKED, event -> {
@@ -105,24 +108,17 @@ public class LoginScene {
             String password = passwordData.getText();
 
             if (email != null && password != null) {
-                try {
+
+                try (DataInputStream in = new DataInputStream(inputStream);
+                     DataOutputStream out = new DataOutputStream(outputStream)) {
                     String credentials = "login:" + email + ", " + password;
-                    in = new DataInputStream(clientSocket.getInputStream());
-                    out = new DataOutputStream(clientSocket.getOutputStream());
                     out.writeUTF(credentials);
                     out.flush();
                     String userNickName = in.readUTF();
                     if (!userNickName.isEmpty())
-                        mainStage.setScene(new MainChatScene(textColor, backgroundColor, mainStage, clientSocket, userNickName).getMainChatScene());
+                        mainStage.setScene(new MainChatScene(textColor, backgroundColor, mainStage, socket, userNickName).getMainChatScene());
                 } catch (IOException e) {
                     e.printStackTrace();
-                } finally {
-                    try {
-                        in.close();
-                        out.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
                 }
             }
         });
@@ -155,8 +151,8 @@ public class LoginScene {
         //password row pass label+passwordField
         passwordData = initPasswordTField(grid);
         //buttons row horizontalBoxGrid
-        Button backToMainStage = initBackToMainStageButton(grid);
-        Button signBtn = initSignInButton(grid);
+        Button backToMainStage = initBackToMainStageButton();
+        Button signBtn = initSignInButton();
         //forming hBoxGrid
         collectButtons(backToMainStage, signBtn, grid);
         //forming group and scene

@@ -16,7 +16,7 @@ import javafx.stage.Stage;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.PrintWriter;
+
 import java.net.Socket;
 
 
@@ -24,7 +24,7 @@ public class RegistrationScene {
     private Scene registerScene;
     private DataOutputStream out;
     private DataInputStream in;
-    private Socket clientSocket;
+    private Socket socket;
     private Color textColor;
     private Color backGroundColor;
     private Stage mainStage;
@@ -37,7 +37,7 @@ public class RegistrationScene {
         this.textColor = textColor;
         this.backGroundColor = backGroundColor;
         this.mainStage = mainStage;
-        this.clientSocket=socket;
+        this.socket =socket;
         collectScene();
     }
 
@@ -132,7 +132,7 @@ public class RegistrationScene {
         Button backToMainStage = new Button("Back");
         backToMainStage.addEventFilter(MouseEvent.MOUSE_CLICKED, event -> {
             try {
-                mainStage.setScene(new WelcomeScene(textColor, backGroundColor, mainStage).getWelcomeScene());
+                mainStage.setScene(new WelcomeScene(textColor, backGroundColor, mainStage, socket).getWelcomeScene());
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -151,12 +151,12 @@ public class RegistrationScene {
             System.out.println(clientData);
             if (sname != null && !sname.isEmpty() & semail != null && !semail.isEmpty() & spass != null && !spass.isEmpty()) {
                 try {
-                    in = new DataInputStream(clientSocket.getInputStream());
-                    out = new DataOutputStream(clientSocket.getOutputStream());
+                    in = new DataInputStream(socket.getInputStream());
+                    out = new DataOutputStream(socket.getOutputStream());
                     out.writeUTF(clientData);
                     out.flush();
                     if (in.readBoolean()) {
-                        mainStage.setScene(new LoginScene(textColor,backGroundColor,mainStage,clientSocket).getLoginScene());
+                        mainStage.setScene(new LoginScene(textColor,backGroundColor,mainStage, socket).getLoginScene());
                     } else {
                         //Alert window
                     }

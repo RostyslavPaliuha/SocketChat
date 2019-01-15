@@ -1,5 +1,7 @@
 package com.rostyslav.home.socketChat.client.ui;
 
+import com.rostyslav.home.socketChat.client.ReaderThread;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -9,10 +11,8 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 
-
 import java.io.*;
 import java.net.Socket;
-import java.util.Arrays;
 
 
 public class MainChatScene {
@@ -20,34 +20,31 @@ public class MainChatScene {
     private Color textColor;
     private Color backagroundColor;
     private Scene mainChatScene;
-    private DataInputStream in;
-    private DataOutputStream out;
     private String userNickName;
     private TextArea generalMessageWindow;
     private TextArea usersOnlineStatus;
     private Socket clientSocket;
+    private DataOutputStream out;
 
     public MainChatScene(Color textColor, Color backGroundColor, Stage mainStage, Socket clientSocket, String userNickName) {
         this.textColor = textColor;
         this.backagroundColor = backGroundColor;
         this.userNickName = userNickName;
         this.clientSocket = clientSocket;
-        collectChatScene();
+        try {
+            out = new DataOutputStream(clientSocket.getOutputStream());
+            collectChatScene();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        launchReader();
     }
 
     public Scene getMainChatScene() {
-        launchReader();
+
         return mainChatScene;
     }
 
-    private void initOutPutInput(Socket clientSocket) {
-        try {
-            in = new DataInputStream(clientSocket.getInputStream());
-            out = new DataOutputStream(clientSocket.getOutputStream());
-        } catch (IOException e) {
-            //alert message
-        }
-    }
 
     private GridPane initGridPane() {
         GridPane gridPane = new GridPane();
@@ -96,16 +93,18 @@ public class MainChatScene {
         Button sendButton = new Button("Send");
         sendButton.setPrefWidth(100);
         sendButton.addEventFilter(MouseEvent.MOUSE_CLICKED, event -> {
-            String msg = "message:";
-            if (textField.getText().length() > 1) {
-                String message = msg.concat(userNickName).concat(" : ").concat(textField.getText());
+            if (!clientSocket.isOutputShutdown()) {
                 try {
-                    out.writeUTF(message);
-                    out.flush();
-                } catch (IOException e) {
-                    e.printStackTrace();
+                    String msg = "message:";
+                    if (textField.getText().length() > 1) {
+                        String message = msg.concat(userNickName).concat(" : ").concat(textField.getText());
+                        out.writeUTF(message);
+                        out.flush();
+                        textField.clear();
+                    }
+                } catch(IOException ioe){
+                    ioe.printStackTrace();
                 }
-                textField.clear();
             }
         });
         HBox msgSenderVB = new HBox();
@@ -116,31 +115,7 @@ public class MainChatScene {
     }
 
     private void launchReader() {
-        initOutPutInput(clientSocket);
-        Runnable reader = () -> {
-        String inputString="";
-            while (true) {
-                try {
-                    try {
-                         inputString= in.readUTF();
-                    } catch (EOFException e) {
-
-                    }
-                    if (inputString.startsWith("message:")) {
-                        String message = inputString.replace("message:", "");
-                        generalMessageWindow.appendText(message + "\n");
-                    } else if (inputString.startsWith("online:")) {
-                        String list = inputString.replace("online:", "");
-                        String[] arr = list.split(",");
-                        usersOnlineStatus.clear();
-                        Arrays.stream(arr).forEach(s -> usersOnlineStatus.appendText(s + "\n"));
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        };
-        new Thread(reader).start();
+        new Thread(new ReaderThread(clientSocket, generalMessageWindow, usersOnlineStatus)).start();
     }
 
     private void collectChatScene() {
@@ -161,6 +136,8 @@ public class MainChatScene {
         menu1.getItems().add(exit);
         MenuBar menuBar = new MenuBar();
         menuBar.getMenus().addAll(menu1, menu2, menu3);
-        gridPane.add(menuBar, 0, 0,2,1);
+        gridPane.add(menuBar, 0, 0, 2, 1);
     }
+
+
 }

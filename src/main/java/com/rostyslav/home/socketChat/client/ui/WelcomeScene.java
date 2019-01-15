@@ -18,8 +18,6 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.net.Socket;
-import java.net.SocketException;
-import java.net.UnknownHostException;
 
 class WelcomeScene {
     private Scene welcomeScene;
@@ -28,25 +26,15 @@ class WelcomeScene {
     private Stage mainStage;
     private Socket socket;
 
-    WelcomeScene(Color textColor, Color backgroundColor, Stage mainStage) throws IOException {
+    WelcomeScene(Color textColor, Color backgroundColor, Stage mainStage,Socket socket) throws IOException {
         this.textColor = textColor;
         this.backgroundColor = backgroundColor;
         this.mainStage = mainStage;
         this.welcomeScene = collectScene();
-        connect();
+        this.socket=socket;
     }
 
-    private void connect() {
-        try {
-            this.socket = new Socket("0.0.0.0", 9999);
-        } catch (SocketException se) {
-            allerDialog();
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+
 
     Scene getWelcomeScene() {
         return welcomeScene;
